@@ -602,7 +602,12 @@ def companyLogin():
 
         if account:
             if password == account[3]:
-                return redirect(url_for('companyProfile', id=account[0]))
+
+                if account[10] == 'ACCEPTED':
+                    return redirect(url_for('companyProfile', id=account[0]))
+                else:
+                    msg = 'Account exists but not accepted yet'
+                    return redirect(url_for('companyLoginPage', msg=msg))
             else:
                 msg = 'Account exists but password incorrect'
                 return redirect(url_for('companyLogin', msg=msg))
