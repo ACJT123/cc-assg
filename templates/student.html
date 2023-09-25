@@ -195,7 +195,7 @@
             {% if account[9] %}
             <option value="{{ account[9] }}" selected>{{ account[9] }}</option>
             {% else %} {% for supervisor in supervisors %}
-            <option value="{{ supervisor[0] }}">{{ supervisor[1] }}</option>
+            <option value="{{ supervisor[0] }}">{{ supervisor[0] }}</option>
             {% endfor %} {% endif %}
           </select>
         </div>
