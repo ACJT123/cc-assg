@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify, make_response
 import mysql.connector
 import os
 import boto3
@@ -23,7 +23,7 @@ db_conn = mysql.connector.connect(
 output = {}
 table = 'employee'
 
-@app.route("/", methods=['GET', 'POST'])
+@app.route("/")
 def home():
     return render_template('index.html')
 
@@ -50,12 +50,13 @@ def student(id):
     account = cursor.fetchone()
     cursor.execute('SELECT * FROM supervisor')
     supervisor = cursor.fetchall()
+    cursor.execute('SELECT * FROM company')
+    company = cursor.fetchall()
     
     # Get the success message from the query parameters
     success_message = request.args.get('success_message', None)
 
-    return render_template('student.html', account=account, supervisors=supervisor, success_message=success_message)
-
+    return render_template('student.html', account=account, supervisors=supervisor, companies=company,success_message=success_message)
 # Route to student profile page
 @app.route("/studentProfile/<student_id>")
 def studentProfile(student_id):
@@ -68,11 +69,13 @@ def studentProfile(student_id):
 
         cursor.execute('SELECT * FROM supervisor WHERE id = %s', (account[9],))
         supervisor = cursor.fetchone() 
+        cursor.execute('SELECT * FROM company WHERE id = %s', (account[8],))
+        company = cursor.fetchone()
     finally:
         cursor.close()
 
     print(account[0])
-    return render_template('studentProfile.html', student=account, supervisor=supervisor)
+    return render_template('studentProfile.html', student=account, supervisor=supervisor, company=company)
 
 # Student login function
 @app.route("/studentLogin", methods=['GET'])
@@ -109,19 +112,36 @@ def selectSupervisor():
     # Redirect to the student page with the success message as a query parameter
     return redirect(url_for('student', id=id, success_message=success_message))
 
+@app.route("/select-company", methods=['POST'])
+def selectCompany():
+    id = request.form['id']
+    company = request.form['company']
+    cursor = db_conn.cursor()
+    cursor.execute('UPDATE student SET company_id = %s WHERE id = %s', (company, id))
+    db_conn.commit()
+    
+    # Set a success message
+    success_message = "Company selection was successful!"
+    
+    # Redirect to the student page with the success message as a query parameter
+    return redirect(url_for('student', id=id, success_message=success_message))
 # Student edit profile function
-@app.route("/editStudentProfile/<student_id>")
+@app.route("/editStudentProfile/<student_id>", methods=['POST'])
 def editStudentProfile(student_id):
     # Get user input name, email and phone number from HTML form
-    name = request.args.get('name')
-    email = request.args.get('email')
-    phone = request.args.get('phone')
+    name = request.form.get('name')
+    email = request.form.get('email')
+    phone = request.form.get('phone')
 
     # Connect to MySQL database
     cursor = db_conn.cursor()
 
     try:
-        cursor.execute('UPDATE student SET name = %s, email = %s, phone_number = %s WHERE id = %s', (name, email, phone, student_id))
+        # Update student information including company_id
+        cursor.execute(
+            'UPDATE student SET name = %s, email = %s, phone_number = %s WHERE id = %s',
+            (name, email, phone, student_id)
+        )
         db_conn.commit()
 
     finally:
