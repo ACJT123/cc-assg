@@ -356,10 +356,31 @@ def editSupervisorProfile(supervisor_id):
 
     return redirect(url_for('supervisorProfile', supervisor_id=supervisor_id, supervisor=account))
 
+
+@app.route("/supervisorProfile/<supervisor_id>")
+def supervisorProfile(supervisor_id):
+    # Connect to MySQL database
+    cursor = db_conn.cursor()
+
+    try:
+        # Get admin data from database
+        cursor.execute('SELECT * FROM supervisor WHERE id = %s', (supervisor_id,))
+        account = cursor.fetchone() # If account not exists, account = None
+    finally:
+        cursor.close()
+
+    print(account[0])
+
+    return render_template('supervisorProfile.html', supervisor=account)
+
 # Supervisor logout function
 @app.route("/supervisorLogout")
 def supervisorLogout():
     return redirect(url_for('supervisorLoginPage'))
+
+
+
+
 
 # -------------------------------
 # |           ADMIN             |
