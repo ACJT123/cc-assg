@@ -143,6 +143,8 @@ ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
 
 @app.route('/uploadResume/<student_id>', methods=['POST'])
 def upload_file(student_id):
+    id = request.args.get('fileInput1')
+
     if 'file' not in request.files:
         return "No file part", 400
     file = request.files['file']
@@ -166,7 +168,7 @@ def upload_file(student_id):
     s3_client.upload_fileobj(file, 'chongxinyi-bucket', s3_key)
     
     # Update the resume column in the student table with correct column name
-    s3_url = f"https://s3.us-east-1.amazonaws.com/{custombucket}.s3.{customregion}.amazonaws.com/{s3_key}"
+    s3_url = f"https://{custombucket}.s3.{customregion}.amazonaws.com/{s3_key}"
     
     cursor = db_conn.cursor()
     try:
@@ -175,18 +177,23 @@ def upload_file(student_id):
     finally:
         cursor.close()
     
-    # Delete the old file from S3 if it exists
-    if old_s3_url:
-        print("Old S3 URL:", old_s3_url)
-        old_s3_key = old_s3_url.split(f"https://{custombucket}.s3.{customregion}.amazonaws.com/")[1]
-        print("Old S3 Key:", old_s3_key)
-        s3_client.delete_object(Bucket='chongxinyi-bucket', Key=old_s3_key)
+    # # Delete the old file from S3 if it exists
+    # if old_s3_url:
+    #     print("Old S3 URL:", old_s3_url)
+    #     old_s3_key = old_s3_url.split(f"https://{custombucket}.s3.{customregion}.amazonaws.com/")
+    #     print("Old S3 Key:", old_s3_key)
+    #     s3_client.delete_object(Bucket='chongxinyi-bucket', Key=old_s3_key)
 
-    return "File uploaded, database updated, and old file deleted successfully"
+        # Set a success message
+    success_message = "Upload Resume was successful!"
+    
+    # Redirect to the student page with the success message as a query parameter
+    return redirect(url_for('student', id=student_id, success_message=success_message))
 
 #for uploading progress report 
 @app.route('/uploadProgressReport/<student_id>', methods=['POST'])
 def upload_file1(student_id):
+    id = request.args.get('fileInput2')
     if 'file' not in request.files:
         return "No file part", 400
     file = request.files['file']
@@ -202,7 +209,7 @@ def upload_file1(student_id):
     s3_client.upload_fileobj(file, 'chongxinyi-bucket', s3_key)
     
     # Update the resume column in the student table
-    s3_url = f"https://s3.us-east-1.amazonaws.com/{custombucket}.s3.{customregion}.amazonaws.com/{s3_key}"
+    s3_url = f"https://{custombucket}.s3.{customregion}.amazonaws.com/{s3_key}"
     
     cursor = db_conn.cursor()
     try:
@@ -211,7 +218,10 @@ def upload_file1(student_id):
     finally:
         cursor.close()
 
-    return "File uploaded and database updated successfully"
+    success_message = "Upload Progress Report was successful!"
+    
+    # Redirect to the student page with the success message as a query parameter
+    return redirect(url_for('student', id=student_id, success_message=success_message))
 
 #check if got the correct extension or not
 def allowed_file(filename):
